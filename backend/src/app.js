@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const errorMiddleware = require('./middlewares/error.middleware');
+const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 
@@ -17,15 +19,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Routes
+app.use('/api/auth', authRoutes);
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Centralized error handler (to be replaced by src/middlewares/error.middleware.js later)
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
-});
+// Centralized error handler
+app.use(errorMiddleware);
 
 module.exports = app;
