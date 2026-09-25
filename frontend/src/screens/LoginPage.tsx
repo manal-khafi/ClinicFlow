@@ -1,12 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { Eye, EyeOff, AlertCircle, Activity, Loader2 } from 'lucide-react';
-import { UserRole } from '../data';
+import { useAuth } from '../context/AuthContext';
 
-interface LoginPageProps {
-  onLogin: (role: UserRole) => void;
-}
-
-export default function LoginPage({ onLogin }: LoginPageProps) {
+export default function LoginPage() {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -25,7 +22,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     return errs;
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitted(true);
     setError('');
@@ -34,17 +31,15 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     if (Object.keys(errs).length) return;
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await login(email, password);
+      // No redirect needed here — once login() succeeds, AuthContext's
+      // isAuthenticated flips to true and App.tsx renders the dashboard.
+    } catch {
+      setError('Invalid email or password. Please try again.');
+    } finally {
       setLoading(false);
-      // Demo: admin@clinicflow.app / any → admin; others → show error
-      if (email === 'staff@clinicflow.app') {
-        onLogin('staff');
-      } else if (email.includes('@')) {
-        onLogin('admin');
-      } else {
-        setError('Invalid email or password. Please try again.');
-      }
-    }, 1400);
+    }
   }
 
   const inputBase = "w-full border rounded-xl px-4 py-3 text-sm text-[#1F2937] placeholder:text-[#9CA3AF] outline-none transition-all bg-white";
