@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme inline {
+  --color-green-brand: #16A34A;
+  --color-green-light: #10B981;
+  --color-mint-50: #ECFDF5;
+  --color-mint-100: #D1FAE5;
+  --color-page-bg: #F3F7F5;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Poppins', sans-serif;
+  --radius-card: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: #F3F7F5;
+  color: #1a2e22;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hide scrollbars by default, show on hover */
+.scrollable {
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.scrollable::-webkit-scrollbar { display: none; }
+
+/* Custom scrollbar when needed */
+.scroll-visible {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #D1FAE5 transparent;
+}
+
+/* Calendar cell hover */
+.cal-cell:hover {
+  background: #ECFDF5;
+  cursor: pointer;
+}
+
+/* Transitions */
+.transition-base {
+  transition: all 0.15s ease;
+}
+
+/* Focus ring */
+input:focus, select:focus, textarea:focus, button:focus-visible {
+  outline: 2px solid #16A34A;
+  outline-offset: 2px;
+}
