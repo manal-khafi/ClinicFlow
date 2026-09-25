@@ -4,7 +4,7 @@ import {
   CheckCircle2, XCircle, MoreVertical, Filter
 } from 'lucide-react';
 import {
-  APPOINTMENTS, Appointment, AppointmentStatus, UserRole,
+  Appointment, AppointmentStatus, UserRole,
   statusColor, statusLabel, formatDate, initials, avatarGradient
 } from '../data';
 import { StatusBadge } from '../components/ui/Badge';
@@ -15,14 +15,18 @@ import BottomSheet from '../components/ui/BottomSheet';
 import NewAppointmentModal from '../components/NewAppointmentModal';
 import AppointmentDetailsPopover from '../components/AppointmentDetailsPopover';
 import { useToast } from '../context/ToastContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface AppointmentsPageProps {
-  isMobile: boolean;
   userRole: UserRole;
   onGoToDashboard?: () => void;
 }
 
-export default function AppointmentsPage({ isMobile, userRole, onGoToDashboard }: AppointmentsPageProps) {
+// TODO: replace with real API call
+const APPOINTMENTS: Appointment[] = [];
+
+export default function AppointmentsPage({ userRole, onGoToDashboard }: AppointmentsPageProps) {
+  const isMobile = useIsMobile();
   const { addToast } = useToast();
 
   const [appointments, setAppointments] = useState(APPOINTMENTS);

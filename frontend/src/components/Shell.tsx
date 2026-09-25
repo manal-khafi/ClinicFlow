@@ -5,11 +5,9 @@ import {
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { UserRole } from '../data';
-
-export type ViewMode = 'desktop' | 'mobile';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface ShellProps {
-  viewMode: ViewMode;
   activeNav: string;
   onNav: (nav: string) => void;
   userRole: UserRole;
@@ -29,12 +27,13 @@ const MOBILE_TABS = [
 ];
 
 export default function Shell({
-  viewMode, activeNav, onNav, userRole,
+  activeNav, onNav, userRole,
   title, subtitle, actions, children, mobileChildren, onFab,
 }: ShellProps) {
   const isAdmin = userRole === 'admin';
+  const isMobile = useIsMobile();
 
-  if (viewMode === 'desktop') {
+  if (!isMobile) {
     return (
       <div className="flex" style={{ minHeight: 'calc(100vh - 49px)', fontFamily: "'Inter', sans-serif" }}>
         <Sidebar activeNav={activeNav} onNav={onNav} userRole={userRole} />

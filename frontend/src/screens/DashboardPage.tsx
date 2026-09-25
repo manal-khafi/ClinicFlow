@@ -6,12 +6,10 @@ import NewAppointmentModal from '../components/NewAppointmentModal';
 import BottomSheet from '../components/ui/BottomSheet';
 import MobileDashboard from '../components/MobileDashboard';
 import { Appointment } from '../data';
+import { useIsMobile } from '../hooks/useIsMobile';
 
-interface DashboardPageProps {
-  isMobile: boolean;
-}
-
-export default function DashboardPage({ isMobile }: DashboardPageProps) {
+export default function DashboardPage() {
+  const isMobile = useIsMobile();
   const [showNewAppt, setShowNewAppt] = useState(false);
   const [newApptDate, setNewApptDate] = useState<string | undefined>();
   const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);

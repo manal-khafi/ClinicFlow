@@ -3,16 +3,16 @@ import {
   Plus, Search, Eye, Pencil, Trash2, ChevronDown,
   SortAsc, AlertCircle, X
 } from 'lucide-react';
-import { PATIENTS, Patient, UserRole, calcAge, formatDate, initials, avatarGradient } from '../data';
+import { Patient, UserRole, calcAge, formatDate, initials, avatarGradient } from '../data';
 import Pagination from '../components/ui/Pagination';
 import EmptyState from '../components/ui/EmptyState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { TableSkeleton, CardSkeleton } from '../components/ui/Skeleton';
 import BottomSheet from '../components/ui/BottomSheet';
 import { useToast } from '../context/ToastContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface PatientsListPageProps {
-  isMobile: boolean;
   userRole: UserRole;
   onViewPatient: (id: string) => void;
 }
@@ -114,7 +114,11 @@ function PatientForm({ patient, existing, onSave, onClose }: PatientFormProps) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-export default function PatientsListPage({ isMobile, userRole, onViewPatient }: PatientsListPageProps) {
+// TODO: replace with real API call
+const PATIENTS: Patient[] = [];
+
+export default function PatientsListPage({ userRole, onViewPatient }: PatientsListPageProps) {
+  const isMobile = useIsMobile();
   const { addToast } = useToast();
   const isAdmin = userRole === 'admin';
 

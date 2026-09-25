@@ -3,7 +3,7 @@ import { Users, CalendarCheck, Clock, CheckCircle2 } from 'lucide-react';
 const STATS = [
   {
     label: 'Total Patients',
-    value: '1,284',
+    value: '0', // TODO: replace with real API call to /api/dashboard/stats
     change: '+12 this month',
     icon: Users,
     iconBg: '#DCFCE7',
@@ -11,7 +11,7 @@ const STATS = [
   },
   {
     label: "Today's Appointments",
-    value: '14',
+    value: '0', // TODO: replace with real API call to /api/dashboard/stats
     change: '3 remaining',
     icon: CalendarCheck,
     iconBg: '#DBEAFE',
@@ -19,7 +19,7 @@ const STATS = [
   },
   {
     label: 'Pending',
-    value: '6',
+    value: '0', // TODO: replace with real API call to /api/dashboard/stats
     change: 'Needs confirmation',
     icon: Clock,
     iconBg: '#FEF3C7',
@@ -27,7 +27,7 @@ const STATS = [
   },
   {
     label: 'Confirmed',
-    value: '8',
+    value: '0', // TODO: replace with real API call to /api/dashboard/stats
     change: 'For today',
     icon: CheckCircle2,
     iconBg: '#DCFCE7',

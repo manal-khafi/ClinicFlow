@@ -10,16 +10,17 @@ import {
 import { StatusBadge } from '../components/ui/Badge';
 import { useToast } from '../context/ToastContext';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface PatientDetailsPageProps {
   patient: Patient;
-  isMobile: boolean;
   userRole: UserRole;
   onBack: () => void;
   onNewAppointment: (patientId: string) => void;
 }
 
-export default function PatientDetailsPage({ patient, isMobile, userRole, onBack, onNewAppointment }: PatientDetailsPageProps) {
+export default function PatientDetailsPage({ patient, userRole, onBack, onNewAppointment }: PatientDetailsPageProps) {
+  const isMobile = useIsMobile();
   const { addToast } = useToast();
   const isAdmin = userRole === 'admin';
   const [tab, setTab] = useState<'all' | 'upcoming' | 'past'>('all');

@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { X, AlertCircle, ChevronDown, Search } from 'lucide-react';
-import { PATIENTS, APPOINTMENTS } from '../data';
+import { Patient, Appointment } from '../data';
 
 interface NewAppointmentModalProps {
   onClose: () => void;
   defaultDate?: string;
   isMobile?: boolean;
 }
+
+// TODO: replace with real API call
+const PATIENTS: Patient[] = [];
+// TODO: replace with real API call
+const APPOINTMENTS: Appointment[] = [];
 
 function checkConflict(patientId: string, date: string, timeStart: string): boolean {
   const patient = PATIENTS.find(p => p.id === patientId);

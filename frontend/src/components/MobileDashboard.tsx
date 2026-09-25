@@ -21,10 +21,10 @@ function getCalendarDays(year: number, month: number): (number | null)[] {
 function padDate(n: number) { return String(n).padStart(2, '0'); }
 
 const STATS = [
-  { label: 'Total Patients', value: '1,284', color: '#16A34A', bg: '#ECFDF5' },
-  { label: "Today's Appts",  value: '14',    color: '#2563EB', bg: '#DBEAFE' },
-  { label: 'Pending',        value: '6',     color: '#D97706', bg: '#FEF3C7' },
-  { label: 'Confirmed',      value: '8',     color: '#16A34A', bg: '#DCFCE7' },
+  { label: 'Total Patients', value: '0', color: '#16A34A', bg: '#ECFDF5' }, // TODO: replace with real API call to /api/dashboard/stats
+  { label: "Today's Appts",  value: '0', color: '#2563EB', bg: '#DBEAFE' }, // TODO: replace with real API call to /api/dashboard/stats
+  { label: 'Pending',        value: '0', color: '#D97706', bg: '#FEF3C7' }, // TODO: replace with real API call to /api/dashboard/stats
+  { label: 'Confirmed',      value: '0', color: '#16A34A', bg: '#DCFCE7' }, // TODO: replace with real API call to /api/dashboard/stats
 ];
 
 export default function MobileDashboard({ onNewAppointment, onSelectAppointment }: MobileDashboardProps) {

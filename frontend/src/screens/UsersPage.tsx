@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, X, Eye, EyeOff, ShieldOff } from 'lucide-react';
-import { USERS, User, UserRole, formatDate, initials, avatarGradient } from '../data';
+import { User, UserRole, formatDate, initials, avatarGradient } from '../data';
 import { RoleBadge } from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import BottomSheet from '../components/ui/BottomSheet';
 import { useToast } from '../context/ToastContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface UsersPageProps {
-  isMobile: boolean;
   userRole: UserRole;
 }
 
@@ -153,8 +153,12 @@ export function AccessDeniedPage({ onBack }: { onBack: () => void }) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-export default function UsersPage({ isMobile, userRole }: UsersPageProps) {
+// TODO: replace with real API call
+const USERS: User[] = [];
+
+export default function UsersPage({ userRole }: UsersPageProps) {
   const { addToast } = useToast();
+  const isMobile = useIsMobile();
   const isAdmin = userRole === 'admin';
 
   // Staff see 403
