@@ -62,7 +62,10 @@ async function createAppointment(data, createdById) {
 }
 
 async function getAppointments({ date, status, page = 1, limit = 10 } = {}) {
-  const where = {};
+  // Appointments belonging to soft-deleted (archived) patients are excluded from normal
+  // views. getAppointmentsForPatient below is the one exception — it deliberately doesn't
+  // apply this filter, since it's what the archived-patient detail page uses.
+  const where = { patient: { deletedAt: null } };
 
   if (status) {
     where.status = status;
