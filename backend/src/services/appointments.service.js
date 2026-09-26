@@ -4,7 +4,7 @@ const { AppError } = require('../middlewares/error.middleware');
 const CONFLICT_WINDOW_MS = 30 * 60 * 1000;
 
 const APPOINTMENT_INCLUDE = {
-  patient: { select: { fullName: true, cin: true } },
+  patient: { select: { fullName: true, cin: true, deletedAt: true } },
   createdBy: { select: { fullName: true } },
 };
 
