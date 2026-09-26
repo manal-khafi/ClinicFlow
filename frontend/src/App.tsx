@@ -11,7 +11,7 @@ import PatientsListPage from './screens/PatientsListPage';
 import PatientDetailsPage from './screens/PatientDetailsPage';
 import AppointmentsPage from './screens/AppointmentsPage';
 import UsersPage, { AccessDeniedPage } from './screens/UsersPage';
-import { Patient, UserRole } from './data';
+import { UserRole } from './data';
 
 type Screen = 'dashboard' | 'patients' | 'patient-details' | 'appointments' | 'users';
 
@@ -54,17 +54,13 @@ function AppContent() {
     setActiveNav('patients');
   }
 
-  // TODO: replace with real API call
-  const PATIENTS: Patient[] = [];
-  const patient = selectedPatientId ? PATIENTS.find(p => p.id === selectedPatientId) ?? null : null;
-
   function renderContent(userRole: UserRole) {
     if (screen === 'dashboard') return <DashboardPage />;
     if (screen === 'patients') return <PatientsListPage userRole={userRole} onViewPatient={handleViewPatient} />;
-    if (screen === 'patient-details' && patient) {
+    if (screen === 'patient-details' && selectedPatientId) {
       return (
         <PatientDetailsPage
-          patient={patient}
+          patientId={selectedPatientId}
           userRole={userRole}
           onBack={handleBackToPatients}
           onNewAppointment={() => { setActiveNav('appointments'); setScreen('appointments'); }}

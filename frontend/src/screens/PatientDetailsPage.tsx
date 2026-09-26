@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft, Pencil, Trash2, Plus, Phone, MapPin, Calendar, Clock,
-  ChevronRight, User
+  ChevronRight, User, Loader2
 } from 'lucide-react';
 import {
   Patient, calcAge, formatDate, initials, avatarGradient,
@@ -11,20 +11,68 @@ import { StatusBadge } from '../components/ui/Badge';
 import { useToast } from '../context/ToastContext';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { getPatientById } from '../api/patients.api';
 
 interface PatientDetailsPageProps {
-  patient: Patient;
+  patientId: string;
   userRole: UserRole;
   onBack: () => void;
   onNewAppointment: (patientId: string) => void;
 }
 
-export default function PatientDetailsPage({ patient, userRole, onBack, onNewAppointment }: PatientDetailsPageProps) {
+export default function PatientDetailsPage({ patientId, userRole, onBack, onNewAppointment }: PatientDetailsPageProps) {
   const isMobile = useIsMobile();
   const { addToast } = useToast();
   const isAdmin = userRole === 'admin';
   const [tab, setTab] = useState<'all' | 'upcoming' | 'past'>('all');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+
+    getPatientById(patientId)
+      .then(p => { if (!cancelled) setPatient(p); })
+      .catch((err) => {
+        if (cancelled) return;
+        if (err?.response?.status === 404) {
+          setNotFound(true);
+        } else {
+          addToast('error', 'Failed to load patient.');
+        }
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [patientId, addToast]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-20">
+        <Loader2 size={18} className="animate-spin" color="#16A34A" />
+        <span className="text-sm text-[#9CA3AF]">Loading…</span>
+      </div>
+    );
+  }
+
+  if (notFound || !patient) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-20 px-8 text-center">
+        <p className="text-sm text-[#6B7280]">Patient not found.</p>
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+          style={{ background: 'linear-gradient(135deg,#16A34A,#10B981)' }}
+        >
+          <ArrowLeft size={14} /> Back to patients
+        </button>
+      </div>
+    );
+  }
 
   const allAppts = getAppointmentsForPatient(patient.id);
   const filteredAppts = allAppts.filter(a => {

@@ -1,9 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Plus, Search, Eye, Pencil, Trash2, ChevronDown,
   SortAsc, AlertCircle, X
 } from 'lucide-react';
 import { Patient, UserRole, calcAge, formatDate, initials, avatarGradient } from '../data';
+import { patientSchema, PatientFormValues } from '../validators/patient.schema';
+import { getPatients, createPatient, updatePatient, deletePatient } from '../api/patients.api';
 import Pagination from '../components/ui/Pagination';
 import EmptyState from '../components/ui/EmptyState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
@@ -22,29 +26,26 @@ type SortKey = 'name' | 'createdAt' | 'dob';
 // ─── Patient Modal ────────────────────────────────────────────────────────────
 interface PatientFormProps {
   patient?: Patient;
-  existing: Patient[];
-  onSave: (p: Omit<Patient, 'id' | 'createdAt' | 'createdBy'>) => void;
+  onSave: (data: PatientFormValues) => void;
   onClose: () => void;
+  submitError?: string;
 }
 
-function PatientForm({ patient, existing, onSave, onClose }: PatientFormProps) {
-  const [form, setForm] = useState({
-    name: patient?.name ?? '',
-    cin: patient?.cin ?? '',
-    phone: patient?.phone ?? '',
-    dob: patient?.dob ?? '',
-    address: patient?.address ?? '',
+function PatientForm({ patient, onSave, onClose, submitError }: PatientFormProps) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<PatientFormValues>({
+    resolver: zodResolver(patientSchema),
+    defaultValues: {
+      fullName: patient?.name ?? '',
+      cin: patient?.cin ?? '',
+      phone: patient?.phone ?? '',
+      birthDate: patient?.dob ?? '',
+      address: patient?.address ?? '',
+    },
   });
-  const [submitted, setSubmitted] = useState(false);
-  const [cinError, setCinError] = useState('');
-
-  function handleSave() {
-    setSubmitted(true);
-    if (!form.name || !form.cin || !form.phone || !form.dob) return;
-    const cinConflict = existing.find(p => p.cin === form.cin && p.id !== patient?.id);
-    if (cinConflict) { setCinError('This CIN already exists.'); return; }
-    onSave(form);
-  }
 
   const inputClass = "w-full border border-[#E7F0EA] rounded-xl px-3.5 py-2.5 text-sm text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#16A34A] focus:ring-2 focus:ring-[#16A34A]/20 transition-all bg-white";
   const errBorder = "border-red-300 ring-2 ring-red-100";
@@ -58,115 +59,149 @@ function PatientForm({ patient, existing, onSave, onClose }: PatientFormProps) {
           </h2>
           <p className="text-xs text-[#9CA3AF] mt-0.5">Fill in the patient's details</p>
         </div>
-        <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center text-[#9CA3AF] hover:bg-[#F6FBF7] transition-colors">
+        <button type="button" onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center text-[#9CA3AF] hover:bg-[#F6FBF7] transition-colors">
           <X size={16} />
         </button>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {/* CIN conflict */}
-        {cinError && (
+      <form onSubmit={handleSubmit(onSave)} className="flex flex-col gap-4">
+        {/* CIN conflict / server error */}
+        {submitError && (
           <div className="flex items-center gap-2.5 p-3 rounded-xl border" style={{ background: '#FEF2F2', borderColor: '#FCA5A5' }}>
             <AlertCircle size={14} color="#DC2626" />
-            <p className="text-xs font-medium text-[#DC2626]">{cinError}</p>
+            <p className="text-xs font-medium text-[#DC2626]">{submitError}</p>
           </div>
         )}
 
         <div>
           <label className="block text-xs font-semibold text-[#374151] mb-1.5">Full Name <span className="text-red-400">*</span></label>
-          <input value={form.name} onChange={e => setForm(v => ({ ...v, name: e.target.value }))} placeholder="e.g. Maria Garcia" className={`${inputClass} ${submitted && !form.name ? errBorder : ''}`} />
-          {submitted && !form.name && <p className="text-xs text-red-500 mt-1">Required</p>}
+          <input {...register('fullName')} placeholder="e.g. Maria Garcia" className={`${inputClass} ${errors.fullName ? errBorder : ''}`} />
+          {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName.message}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold text-[#374151] mb-1.5">CIN <span className="text-red-400">*</span></label>
-            <input value={form.cin} onChange={e => { setForm(v => ({ ...v, cin: e.target.value })); setCinError(''); }} placeholder="AB123456" className={`${inputClass} ${(submitted && !form.cin) || cinError ? errBorder : ''}`} />
-            {submitted && !form.cin && <p className="text-xs text-red-500 mt-1">Required</p>}
+            <input {...register('cin')} placeholder="AB123456" className={`${inputClass} ${errors.cin ? errBorder : ''}`} />
+            {errors.cin && <p className="text-xs text-red-500 mt-1">{errors.cin.message}</p>}
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#374151] mb-1.5">Phone <span className="text-red-400">*</span></label>
-            <input value={form.phone} onChange={e => setForm(v => ({ ...v, phone: e.target.value }))} placeholder="+1 (555) 000-0000" className={`${inputClass} ${submitted && !form.phone ? errBorder : ''}`} />
-            {submitted && !form.phone && <p className="text-xs text-red-500 mt-1">Required</p>}
+            <input {...register('phone')} placeholder="+1 (555) 000-0000" className={`${inputClass} ${errors.phone ? errBorder : ''}`} />
+            {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone.message}</p>}
           </div>
         </div>
 
         <div>
           <label className="block text-xs font-semibold text-[#374151] mb-1.5">Date of Birth <span className="text-red-400">*</span></label>
-          <input type="date" value={form.dob} onChange={e => setForm(v => ({ ...v, dob: e.target.value }))} className={`${inputClass} ${submitted && !form.dob ? errBorder : ''}`} />
-          {submitted && !form.dob && <p className="text-xs text-red-500 mt-1">Required</p>}
+          <input type="date" {...register('birthDate')} className={`${inputClass} ${errors.birthDate ? errBorder : ''}`} />
+          {errors.birthDate && <p className="text-xs text-red-500 mt-1">{errors.birthDate.message}</p>}
         </div>
 
         <div>
           <label className="block text-xs font-semibold text-[#374151] mb-1.5">Address <span className="text-[#9CA3AF] font-normal">(optional)</span></label>
-          <input value={form.address} onChange={e => setForm(v => ({ ...v, address: e.target.value }))} placeholder="Street, City" className={inputClass} />
+          <input {...register('address')} placeholder="Street, City" className={inputClass} />
         </div>
 
         <div className="flex gap-3 pt-1 border-t border-[#E7F0EA] mt-1">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-[#E7F0EA] text-[#6B7280] hover:bg-[#F6FBF7] transition-all active:scale-95">Cancel</button>
-          <button onClick={handleSave} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95" style={{ background: 'linear-gradient(135deg,#16A34A,#10B981)' }}>
-            {patient ? 'Save changes' : 'Add patient'}
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-[#E7F0EA] text-[#6B7280] hover:bg-[#F6FBF7] transition-all active:scale-95">Cancel</button>
+          <button type="submit" disabled={isSubmitting} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#16A34A,#10B981)' }}>
+            {isSubmitting ? 'Saving…' : patient ? 'Save changes' : 'Add patient'}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-// TODO: replace with real API call
-const PATIENTS: Patient[] = [];
-
 export default function PatientsListPage({ userRole, onViewPatient }: PatientsListPageProps) {
   const isMobile = useIsMobile();
   const { addToast } = useToast();
   const isAdmin = userRole === 'admin';
 
-  const [patients, setPatients] = useState(PATIENTS);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editPatient, setEditPatient] = useState<Patient | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<Patient | null>(null);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [formError, setFormError] = useState('');
 
-  const filtered = useMemo(() => {
-    let list = patients.filter(p =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.cin.toLowerCase().includes(search.toLowerCase())
-    );
-    list = [...list].sort((a, b) => {
+  // Debounce the search box by ~300ms so it doesn't fire a request per keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const fetchPatients = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await getPatients({ search: debouncedSearch, page, limit: rowsPerPage });
+      setPatients(result.data);
+      setTotal(result.total);
+      setTotalPages(result.totalPages);
+    } catch {
+      addToast('error', 'Failed to load patients.');
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch, page, rowsPerPage, addToast]);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+
+  // Sorting only applies within the current page — the API doesn't support server-side
+  // sorting, so this mirrors the previous behavior as closely as possible.
+  const sortedPatients = useMemo(() => {
+    return [...patients].sort((a, b) => {
       if (sortKey === 'name') return a.name.localeCompare(b.name);
       if (sortKey === 'dob') return a.dob.localeCompare(b.dob);
       return b.createdAt.localeCompare(a.createdAt);
     });
-    return list;
-  }, [patients, search, sortKey]);
+  }, [patients, sortKey]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
-  const paginated = filtered.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-
-  function handleSave(form: Omit<Patient, 'id' | 'createdAt' | 'createdBy'>) {
-    if (editPatient) {
-      setPatients(prev => prev.map(p => p.id === editPatient.id ? { ...p, ...form } : p));
-      addToast('success', 'Patient updated successfully.');
-    } else {
-      const newP: Patient = { ...form, id: `p${Date.now()}`, createdAt: '2026-09-24', createdBy: 'Dr. Rachel Kim' };
-      setPatients(prev => [newP, ...prev]);
-      addToast('success', 'Patient added successfully.');
+  async function handleSave(data: PatientFormValues) {
+    setFormError('');
+    try {
+      if (editPatient) {
+        await updatePatient(editPatient.id, data);
+        addToast('success', 'Patient updated successfully.');
+      } else {
+        await createPatient(data);
+        addToast('success', 'Patient added successfully.');
+      }
+      setShowModal(false);
+      setEditPatient(undefined);
+      fetchPatients();
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        setFormError(err.response.data?.error ?? 'This CIN already exists.');
+      } else {
+        setFormError('Something went wrong. Please try again.');
+      }
     }
-    setShowModal(false);
-    setEditPatient(undefined);
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!deleteTarget) return;
-    setPatients(prev => prev.filter(p => p.id !== deleteTarget.id));
-    addToast('success', `${deleteTarget.name} removed from patient records.`);
-    setDeleteTarget(null);
+    try {
+      await deletePatient(deleteTarget.id);
+      addToast('success', `${deleteTarget.name} removed from patient records.`);
+      fetchPatients();
+    } catch {
+      addToast('error', 'Failed to delete patient.');
+    } finally {
+      setDeleteTarget(null);
+    }
   }
 
   const SORT_OPTIONS: { key: SortKey; label: string }[] = [
@@ -182,10 +217,10 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-[#14532D]" style={{ fontFamily: "'Poppins', sans-serif" }}>Patients</h2>
-          <p className="text-sm text-[#9CA3AF] mt-0.5">{patients.length} patients registered</p>
+          <p className="text-sm text-[#9CA3AF] mt-0.5">{total} patients registered</p>
         </div>
         <button
-          onClick={() => { setEditPatient(undefined); setShowModal(true); }}
+          onClick={() => { setEditPatient(undefined); setFormError(''); setShowModal(true); }}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
           style={{ background: 'linear-gradient(135deg,#16A34A,#10B981)' }}
         >
@@ -240,18 +275,18 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
 
         {loading ? (
           <TableSkeleton rows={8} cols={6} />
-        ) : paginated.length === 0 ? (
+        ) : sortedPatients.length === 0 ? (
           <EmptyState
             title="No patients found"
             description={search ? `No results for "${search}". Try a different name or CIN.` : 'Start by adding your first patient.'}
             action={
-              <button onClick={() => { setEditPatient(undefined); setShowModal(true); }} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: 'linear-gradient(135deg,#16A34A,#10B981)' }}>
+              <button onClick={() => { setEditPatient(undefined); setFormError(''); setShowModal(true); }} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: 'linear-gradient(135deg,#16A34A,#10B981)' }}>
                 <Plus size={15} /> Add patient
               </button>
             }
           />
         ) : (
-          paginated.map(p => (
+          sortedPatients.map(p => (
             <div
               key={p.id}
               className="grid items-center px-6 py-3.5 border-b border-[#F0F5F2] last:border-0 hover:bg-[#FAFCFB] transition-colors group"
@@ -274,7 +309,7 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
                 <button onClick={() => onViewPatient(p.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-[#9CA3AF] hover:bg-[#ECFDF5] hover:text-[#16A34A] transition-colors" title="View">
                   <Eye size={14} />
                 </button>
-                <button onClick={() => { setEditPatient(p); setShowModal(true); }} className="w-7 h-7 rounded-lg flex items-center justify-center text-[#9CA3AF] hover:bg-[#ECFDF5] hover:text-[#16A34A] transition-colors" title="Edit">
+                <button onClick={() => { setEditPatient(p); setFormError(''); setShowModal(true); }} className="w-7 h-7 rounded-lg flex items-center justify-center text-[#9CA3AF] hover:bg-[#ECFDF5] hover:text-[#16A34A] transition-colors" title="Edit">
                   <Pencil size={14} />
                 </button>
                 {isAdmin && (
@@ -288,9 +323,9 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
         )}
 
         {/* Pagination */}
-        {paginated.length > 0 && (
+        {sortedPatients.length > 0 && (
           <div className="px-6 py-3.5 border-t border-[#F0F5F2]">
-            <Pagination page={page} totalPages={totalPages} onPage={setPage} rowsPerPage={rowsPerPage} onRowsPerPage={n => { setRowsPerPage(n); setPage(1); }} totalItems={filtered.length} />
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} rowsPerPage={rowsPerPage} onRowsPerPage={n => { setRowsPerPage(n); setPage(1); }} totalItems={total} />
           </div>
         )}
       </div>
@@ -313,10 +348,10 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
 
       {loading ? (
         <CardSkeleton count={5} />
-      ) : filtered.length === 0 ? (
+      ) : sortedPatients.length === 0 ? (
         <EmptyState title="No patients found" description={search ? `No results for "${search}".` : 'Start by adding a patient.'} />
       ) : (
-        filtered.map(p => (
+        sortedPatients.map(p => (
           <div key={p.id} className="bg-white rounded-2xl border border-[#E7F0EA] p-4 shadow-sm">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style={{ background: avatarGradient(p.id) }}>
@@ -332,7 +367,7 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
               <button onClick={() => onViewPatient(p.id)} className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[#E7F0EA] text-[#374151] hover:bg-[#F6FBF7] transition-colors flex items-center justify-center gap-1">
                 <Eye size={12} /> View
               </button>
-              <button onClick={() => { setEditPatient(p); setShowModal(true); }} className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[#E7F0EA] text-[#374151] hover:bg-[#F6FBF7] transition-colors flex items-center justify-center gap-1">
+              <button onClick={() => { setEditPatient(p); setFormError(''); setShowModal(true); }} className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-[#E7F0EA] text-[#374151] hover:bg-[#F6FBF7] transition-colors flex items-center justify-center gap-1">
                 <Pencil size={12} /> Edit
               </button>
               {isAdmin && (
@@ -356,7 +391,7 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
           <div className="relative z-10 bg-white rounded-2xl shadow-2xl border border-[#E7F0EA] w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <PatientForm patient={editPatient} existing={patients} onSave={handleSave} onClose={() => setShowModal(false)} />
+            <PatientForm patient={editPatient} onSave={handleSave} onClose={() => setShowModal(false)} submitError={formError} />
           </div>
         </div>
       )}
@@ -364,7 +399,7 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
       {/* Mobile bottom sheet */}
       {showModal && isMobile && (
         <BottomSheet onClose={() => setShowModal(false)}>
-          <PatientForm patient={editPatient} existing={patients} onSave={handleSave} onClose={() => setShowModal(false)} />
+          <PatientForm patient={editPatient} onSave={handleSave} onClose={() => setShowModal(false)} submitError={formError} />
         </BottomSheet>
       )}
 
