@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Plus, Search, RotateCcw, CalendarDays,
   CheckCircle2, XCircle, MoreVertical, Filter
@@ -7,6 +7,7 @@ import {
   Appointment, AppointmentStatus, UserRole,
   statusColor, statusLabel, formatDate, initials, avatarGradient
 } from '../data';
+import { getAppointments, updateAppointmentStatus } from '../api/appointments.api';
 import { StatusBadge } from '../components/ui/Badge';
 import Pagination from '../components/ui/Pagination';
 import EmptyState from '../components/ui/EmptyState';
@@ -22,43 +23,78 @@ interface AppointmentsPageProps {
   onGoToDashboard?: () => void;
 }
 
-// TODO: replace with real API call
-const APPOINTMENTS: Appointment[] = [];
-
 export default function AppointmentsPage({ userRole, onGoToDashboard }: AppointmentsPageProps) {
   const isMobile = useIsMobile();
   const { addToast } = useToast();
 
-  const [appointments, setAppointments] = useState(APPOINTMENTS);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | 'all'>('all');
   const [dateFilter, setDateFilter] = useState('');
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showNewAppt, setShowNewAppt] = useState(false);
   const [newApptDate, setNewApptDate] = useState<string | undefined>();
   const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
+  // Debounce the search box by ~300ms. Note: the backend has no patient search param for
+  // appointments (only date/status/page/limit), so this only filters within the current
+  // fetched page client-side — it never triggers a new request on its own.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const fetchAppointments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await getAppointments({
+        date: dateFilter || undefined,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        page,
+        limit: rowsPerPage,
+      });
+      setAppointments(result.data);
+      setTotal(result.total);
+      setTotalPages(result.totalPages);
+    } catch {
+      addToast('error', 'Failed to load appointments.');
+    } finally {
+      setLoading(false);
+    }
+  }, [dateFilter, statusFilter, page, rowsPerPage, addToast]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
+
+  // Client-side only — see the note above on the search debounce.
   const filtered = useMemo(() => {
-    return appointments.filter(a => {
-      const matchSearch = search === '' ||
-        a.patientName.toLowerCase().includes(search.toLowerCase()) ||
-        a.patientCin.toLowerCase().includes(search.toLowerCase());
-      const matchStatus = statusFilter === 'all' || a.status === statusFilter;
-      const matchDate = dateFilter === '' || a.date === dateFilter;
-      return matchSearch && matchStatus && matchDate;
-    }).sort((a, b) => b.date.localeCompare(a.date) || a.timeStart.localeCompare(b.timeStart));
-  }, [appointments, search, statusFilter, dateFilter]);
+    if (!debouncedSearch) return appointments;
+    return appointments.filter(a =>
+      a.patientName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      a.patientCin.toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+  }, [appointments, debouncedSearch]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
-  const paginated = filtered.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-
-  function updateStatus(id: string, status: AppointmentStatus) {
-    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  async function updateStatus(id: string, status: AppointmentStatus) {
     setOpenMenu(null);
-    addToast('success', `Appointment marked as ${statusLabel(status)}.`);
+    try {
+      await updateAppointmentStatus(id, status);
+      addToast('success', `Appointment marked as ${statusLabel(status)}.`);
+      fetchAppointments();
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        addToast('error', err.response.data?.error ?? 'This patient already has a confirmed appointment within 30 minutes of this time.');
+      } else {
+        addToast('error', 'Failed to update appointment status.');
+      }
+    }
   }
 
   function handleNewAppt(date?: string) {
@@ -88,7 +124,7 @@ export default function AppointmentsPage({ userRole, onGoToDashboard }: Appointm
           <h2 className="text-xl font-semibold text-[#14532D]" style={{ fontFamily: "'Poppins', sans-serif" }}>
             Appointments
           </h2>
-          <p className="text-sm text-[#9CA3AF] mt-0.5">{appointments.length} total appointments</p>
+          <p className="text-sm text-[#9CA3AF] mt-0.5">{total} total appointments</p>
         </div>
         <div className="flex items-center gap-2.5">
           <button
@@ -159,13 +195,13 @@ export default function AppointmentsPage({ userRole, onGoToDashboard }: Appointm
 
         {loading ? (
           <TableSkeleton rows={8} cols={6} />
-        ) : paginated.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <EmptyState
             title="No appointments found"
             description={hasFilters ? 'Try adjusting your filters.' : 'No appointments scheduled yet.'}
           />
         ) : (
-          paginated.map(a => (
+          filtered.map(a => (
             <div
               key={a.id}
               className="grid items-center px-6 py-3.5 border-b border-[#F0F5F2] last:border-0 hover:bg-[#FAFCFB] transition-colors"
@@ -252,7 +288,7 @@ export default function AppointmentsPage({ userRole, onGoToDashboard }: Appointm
             onPage={setPage}
             rowsPerPage={rowsPerPage}
             onRowsPerPage={n => { setRowsPerPage(n); setPage(1); }}
-            totalItems={filtered.length}
+            totalItems={total}
           />
         </div>
       </div>
@@ -340,11 +376,11 @@ export default function AppointmentsPage({ userRole, onGoToDashboard }: Appointm
       {isMobile ? mobileContent : desktopList}
 
       {showNewAppt && !isMobile && (
-        <NewAppointmentModal onClose={() => setShowNewAppt(false)} defaultDate={newApptDate} />
+        <NewAppointmentModal onClose={() => setShowNewAppt(false)} defaultDate={newApptDate} onSuccess={fetchAppointments} />
       )}
       {showNewAppt && isMobile && (
         <BottomSheet onClose={() => setShowNewAppt(false)}>
-          <NewAppointmentModal onClose={() => setShowNewAppt(false)} defaultDate={newApptDate} isMobile />
+          <NewAppointmentModal onClose={() => setShowNewAppt(false)} defaultDate={newApptDate} isMobile onSuccess={fetchAppointments} />
         </BottomSheet>
       )}
       {selectedAppt && (

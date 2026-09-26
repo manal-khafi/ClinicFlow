@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { Appointment, statusColor, statusLabel, getAppointmentsForDate, TODAY } from '../data';
+import { useState, useEffect } from 'react';
+import { Appointment, statusColor, statusLabel, TODAY } from '../data';
+import { getAppointments } from '../api/appointments.api';
 
 interface MobileDashboardProps {
   onNewAppointment: (date?: string) => void;
   onSelectAppointment: (a: Appointment) => void;
+  refreshTrigger?: number;
 }
 
 const DAYS_OF_WEEK_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -27,16 +29,31 @@ const STATS = [
   { label: 'Confirmed',      value: '0', color: '#16A34A', bg: '#DCFCE7' }, // TODO: replace with real API call to /api/dashboard/stats
 ];
 
-export default function MobileDashboard({ onNewAppointment, onSelectAppointment }: MobileDashboardProps) {
+export default function MobileDashboard({ onNewAppointment, onSelectAppointment, refreshTrigger }: MobileDashboardProps) {
   const [selectedDate, setSelectedDate] = useState(TODAY);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const year = 2026, month = 8;
   const calDays = getCalendarDays(year, month);
   const dateStr = (day: number) => `${year}-${padDate(month + 1)}-${padDate(day)}`;
   const isToday  = (day: number) => dateStr(day) === TODAY;
   const isSelected = (day: number) => dateStr(day) === selectedDate;
 
+  // Same limitation as Calendar.tsx — the backend only filters by a single day or status,
+  // not a month range, so this fetches a batch once and groups it client-side.
+  useEffect(() => {
+    let cancelled = false;
+    getAppointments({ limit: 200 })
+      .then(res => { if (!cancelled) setAppointments(res.data); })
+      .catch(() => { if (!cancelled) setAppointments([]); });
+    return () => { cancelled = true; };
+  }, [refreshTrigger]);
+
+  function getAppointmentsForDay(ds: string): Appointment[] {
+    return appointments.filter(a => a.date === ds);
+  }
+
   const hasAppts = (day: number) => {
-    const appts = getAppointmentsForDate(dateStr(day));
+    const appts = getAppointmentsForDay(dateStr(day));
     return {
       confirmed: appts.some(a => a.status === 'confirmed'),
       pending:   appts.some(a => a.status === 'pending'),
@@ -44,7 +61,7 @@ export default function MobileDashboard({ onNewAppointment, onSelectAppointment 
     };
   };
 
-  const selectedAppts = getAppointmentsForDate(selectedDate);
+  const selectedAppts = getAppointmentsForDay(selectedDate);
   const selectedDateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const monthLabel = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 

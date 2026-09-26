@@ -4,14 +4,15 @@ import {
   ChevronRight, User, Loader2
 } from 'lucide-react';
 import {
-  Patient, calcAge, formatDate, initials, avatarGradient,
-  getAppointmentsForPatient, statusColor, UserRole, TODAY
+  Patient, Appointment, calcAge, formatDate, initials, avatarGradient,
+  statusColor, UserRole, TODAY
 } from '../data';
 import { StatusBadge } from '../components/ui/Badge';
 import { useToast } from '../context/ToastContext';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { getPatientById } from '../api/patients.api';
+import { getAppointmentsForPatient } from '../api/appointments.api';
 
 interface PatientDetailsPageProps {
   patientId: string;
@@ -29,6 +30,7 @@ export default function PatientDetailsPage({ patientId, userRole, onBack, onNewA
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +49,14 @@ export default function PatientDetailsPage({ patientId, userRole, onBack, onNewA
       })
       .finally(() => { if (!cancelled) setLoading(false); });
 
+    return () => { cancelled = true; };
+  }, [patientId, addToast]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAppointmentsForPatient(patientId)
+      .then(appts => { if (!cancelled) setAppointments(appts); })
+      .catch(() => { if (!cancelled) addToast('error', 'Failed to load appointments.'); });
     return () => { cancelled = true; };
   }, [patientId, addToast]);
 
@@ -74,7 +84,7 @@ export default function PatientDetailsPage({ patientId, userRole, onBack, onNewA
     );
   }
 
-  const allAppts = getAppointmentsForPatient(patient.id);
+  const allAppts = appointments;
   const filteredAppts = allAppts.filter(a => {
     if (tab === 'upcoming') return a.date >= TODAY && a.status !== 'cancelled';
     if (tab === 'past') return a.date < TODAY || a.status === 'cancelled';

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { Appointment, getAppointmentsForDate } from '../data';
+import { Appointment } from '../data';
+import { getAppointments } from '../api/appointments.api';
 import AppointmentChip from './AppointmentChip';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -8,6 +9,9 @@ const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 interface CalendarProps {
   onNewAppointment: (date?: string) => void;
   onSelectAppointment: (a: Appointment) => void;
+  // Bumped by the parent whenever an appointment is created elsewhere (e.g. the "New
+  // appointment" modal), so this refetches instead of showing stale data.
+  refreshTrigger?: number;
 }
 
 function getCalendarDays(year: number, month: number): (number | null)[] {
@@ -22,16 +26,33 @@ function getCalendarDays(year: number, month: number): (number | null)[] {
 
 function padDate(n: number) { return String(n).padStart(2, '0'); }
 
-export default function Calendar({ onNewAppointment, onSelectAppointment }: CalendarProps) {
+export default function Calendar({ onNewAppointment, onSelectAppointment, refreshTrigger }: CalendarProps) {
   const [year, setYear] = useState(2026);
   const [month, setMonth] = useState(8); // 0-indexed: 8 = September
   const [view] = useState<'month' | 'week' | 'day'>('month');
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
 
   const today = '2026-09-24';
   const todayDate = new Date(today);
 
   const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const calDays = getCalendarDays(year, month);
+
+  // The backend only supports filtering appointments by a single day or by status, not a
+  // month range — so this fetches a generous batch and groups it by day client-side.
+  // Appointments far outside this batch (e.g. months with heavy history) won't show here;
+  // adding a real date-range endpoint would need a backend change, which is out of scope.
+  useEffect(() => {
+    let cancelled = false;
+    getAppointments({ limit: 200 })
+      .then(res => { if (!cancelled) setAppointments(res.data); })
+      .catch(() => { if (!cancelled) setAppointments([]); });
+    return () => { cancelled = true; };
+  }, [refreshTrigger]);
+
+  function getAppointmentsForDay(ds: string): Appointment[] {
+    return appointments.filter(a => a.date === ds);
+  }
 
   function prevMonth() {
     if (month === 0) { setYear(y => y - 1); setMonth(11); }
@@ -138,7 +159,7 @@ export default function Calendar({ onNewAppointment, onSelectAppointment }: Cale
             );
           }
           const ds = dateStr(day);
-          const dayAppts = getAppointmentsForDate(ds);
+          const dayAppts = getAppointmentsForDay(ds);
           const MAX_VISIBLE = 3;
           const visible = dayAppts.slice(0, MAX_VISIBLE);
           const overflow = dayAppts.length - MAX_VISIBLE;
