@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const errorMiddleware = require('./middlewares/error.middleware');
 const authRoutes = require('./routes/auth.routes');
 const patientsRoutes = require('./routes/patients.routes');
+const appointmentsRoutes = require('./routes/appointments.routes');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.get('/api/health', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientsRoutes);
+app.use('/api/appointments', appointmentsRoutes);
 
 // 404 handler
 app.use((req, res) => {
