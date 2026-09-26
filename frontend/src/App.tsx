@@ -11,15 +11,18 @@ import PatientsListPage from './screens/PatientsListPage';
 import PatientDetailsPage from './screens/PatientDetailsPage';
 import AppointmentsPage from './screens/AppointmentsPage';
 import UsersPage, { AccessDeniedPage } from './screens/UsersPage';
+import ArchivedPatientsPage from './screens/ArchivedPatientsPage';
+import ArchivedPatientDetailsPage from './screens/ArchivedPatientDetailsPage';
 import { UserRole } from './data';
 
-type Screen = 'dashboard' | 'patients' | 'patient-details' | 'appointments' | 'users';
+type Screen = 'dashboard' | 'patients' | 'patient-details' | 'appointments' | 'users' | 'archived-patients' | 'archived-patient-details';
 
 // Map nav ids to Screen
 const NAV_SCREEN: Record<string, Screen> = {
   dashboard: 'dashboard',
   patients: 'patients',
   appointments: 'appointments',
+  'archived-patients': 'archived-patients',
   users: 'users',
 };
 
@@ -30,6 +33,8 @@ const SCREEN_META: Record<Screen, { title: string; subtitle?: string }> = {
   'patient-details': { title: 'Patient Details' },
   appointments:    { title: 'Appointments' },
   users:           { title: 'Users' },
+  'archived-patients': { title: 'Archived Patients' },
+  'archived-patient-details': { title: 'Archived Patient Details' },
 };
 
 function AppContent() {
@@ -37,6 +42,7 @@ function AppContent() {
   const [screen, setScreen] = useState<Screen>('dashboard');
   const [activeNav, setActiveNav] = useState('dashboard');
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [selectedArchivedPatientId, setSelectedArchivedPatientId] = useState<string | null>(null);
 
   function handleNav(nav: string) {
     setActiveNav(nav);
@@ -54,6 +60,16 @@ function AppContent() {
     setActiveNav('patients');
   }
 
+  function handleViewArchivedPatient(id: string) {
+    setSelectedArchivedPatientId(id);
+    setScreen('archived-patient-details');
+  }
+
+  function handleBackToArchivedPatients() {
+    setScreen('archived-patients');
+    setActiveNav('archived-patients');
+  }
+
   function renderContent(userRole: UserRole) {
     if (screen === 'dashboard') return <DashboardPage />;
     if (screen === 'patients') return <PatientsListPage userRole={userRole} onViewPatient={handleViewPatient} />;
@@ -68,6 +84,20 @@ function AppContent() {
       );
     }
     if (screen === 'appointments') return <AppointmentsPage userRole={userRole} onGoToDashboard={() => handleNav('dashboard')} />;
+    if (screen === 'archived-patients') {
+      if (userRole !== 'admin') return <AccessDeniedPage onBack={() => handleNav('dashboard')} />;
+      return <ArchivedPatientsPage userRole={userRole} onViewPatient={handleViewArchivedPatient} />;
+    }
+    if (screen === 'archived-patient-details' && selectedArchivedPatientId) {
+      if (userRole !== 'admin') return <AccessDeniedPage onBack={() => handleNav('dashboard')} />;
+      return (
+        <ArchivedPatientDetailsPage
+          patientId={selectedArchivedPatientId}
+          userRole={userRole}
+          onBack={handleBackToArchivedPatients}
+        />
+      );
+    }
     if (screen === 'users') {
       if (userRole !== 'admin') return <AccessDeniedPage onBack={() => handleNav('dashboard')} />;
       return <UsersPage userRole={userRole} />;

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, CalendarDays, UserCog, LogOut,
-  Activity
+  Activity, Archive
 } from 'lucide-react';
 import { UserRole } from '../data';
 
@@ -14,6 +14,7 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'patients', label: 'Patients', icon: Users },
   { id: 'appointments', label: 'Appointments', icon: CalendarDays },
+  { id: 'archived-patients', label: 'Archived Patients', icon: Archive, adminOnly: true },
   { id: 'users', label: 'Users', icon: UserCog, adminOnly: true },
 ];
 

@@ -12,6 +12,7 @@ export interface Patient {
   address: string;
   createdAt: string; // YYYY-MM-DD
   createdBy: string;
+  deletedAt?: string | null;
 }
 
 // TODO: replace with real API call
@@ -35,6 +36,7 @@ export interface Appointment {
   patientId: string;
   patientName: string;
   patientCin: string;
+  patientDeletedAt?: string | null;
   date: string;
   timeStart: string;
   timeEnd: string;

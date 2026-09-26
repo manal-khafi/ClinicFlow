@@ -13,7 +13,7 @@ interface ApiAppointment {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
-  patient?: { fullName: string; cin: string };
+  patient?: { fullName: string; cin: string; deletedAt: string | null };
   createdBy?: { fullName: string };
 }
 
@@ -51,6 +51,7 @@ function mapApiAppointment(a: ApiAppointment): Appointment {
     patientId: a.patientId,
     patientName: a.patient?.fullName ?? '',
     patientCin: a.patient?.cin ?? '',
+    patientDeletedAt: a.patient?.deletedAt ?? null,
     date: toLocalDateStr(start),
     timeStart: toLocalTimeStr(start),
     timeEnd: toLocalTimeStr(end),

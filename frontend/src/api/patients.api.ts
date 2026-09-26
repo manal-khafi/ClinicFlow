@@ -1,5 +1,5 @@
 import axiosInstance from './axiosInstance';
-import { Patient } from '../data';
+import { Patient, Appointment } from '../data';
 import { PatientFormValues } from '../validators/patient.schema';
 
 interface ApiPatient {
@@ -38,7 +38,21 @@ function mapApiPatient(p: ApiPatient): Patient {
     address: p.address ?? '',
     createdAt: p.createdAt.slice(0, 10),
     createdBy: '',
+    deletedAt: p.deletedAt ?? null,
   };
+}
+
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function toLocalTimeStr(d: Date): string {
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
 }
 
 export interface GetPatientsParams {
@@ -78,4 +92,56 @@ export async function updatePatient(id: string, payload: Partial<PatientFormValu
 
 export async function deletePatient(id: string): Promise<void> {
   await axiosInstance.delete(`/patients/${id}`);
+}
+
+export async function getArchivedPatients({ search, page, limit }: GetPatientsParams = {}): Promise<PaginatedPatients> {
+  const { data } = await axiosInstance.get('/patients/archived', {
+    params: { search: search || undefined, page, limit },
+  });
+
+  return {
+    data: data.data.map(mapApiPatient),
+    total: data.total,
+    page: data.page,
+    limit: data.limit,
+    totalPages: data.totalPages,
+  };
+}
+
+export interface ArchivedPatientDetail extends Patient {
+  appointments: Appointment[];
+}
+
+// getArchivedPatientById's appointments are nested straight on the patient (no
+// patient/createdBy sub-objects, unlike the appointments API) — patientName/patientCin
+// come from the same response's own fullName/cin, and createdBy is left blank since
+// that relation isn't included by this endpoint.
+export async function getArchivedPatientById(id: string): Promise<ArchivedPatientDetail> {
+  const { data } = await axiosInstance.get(`/patients/archived/${id}`);
+
+  return {
+    ...mapApiPatient(data),
+    appointments: (data.appointments ?? []).map((a: any) => {
+      const start = new Date(a.appointmentDate);
+      const end = new Date(a.endsAt);
+      return {
+        id: a.id,
+        patientId: a.patientId,
+        patientName: data.fullName,
+        patientCin: data.cin,
+        date: toLocalDateStr(start),
+        timeStart: toLocalTimeStr(start),
+        timeEnd: toLocalTimeStr(end),
+        reason: a.reason,
+        notes: a.notes ?? undefined,
+        status: a.status,
+        createdBy: '',
+      };
+    }),
+  };
+}
+
+export async function restorePatient(id: string): Promise<Patient> {
+  const { data } = await axiosInstance.patch(`/patients/archived/${id}/restore`);
+  return mapApiPatient(data);
 }

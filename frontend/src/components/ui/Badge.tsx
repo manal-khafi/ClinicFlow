@@ -23,6 +23,17 @@ export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
   );
 }
 
+export function InactivePatientBadge() {
+  return (
+    <span
+      className="inline-flex items-center font-semibold rounded-full"
+      style={{ background: '#F3F4F6', color: '#6B7280', fontSize: 10, padding: '2px 8px' }}
+    >
+      Deleted patient
+    </span>
+  );
+}
+
 interface RoleBadgeProps { role: UserRole }
 
 export function RoleBadge({ role }: RoleBadgeProps) {
