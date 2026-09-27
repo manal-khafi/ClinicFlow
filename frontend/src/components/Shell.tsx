@@ -1,11 +1,12 @@
 import { ReactNode } from 'react';
 import {
-  Bell, Search, ChevronDown, Menu, LayoutDashboard, Users,
+  Search, ChevronDown, Menu, LayoutDashboard, Users,
   CalendarDays, UserCog, Plus
 } from 'lucide-react';
 import Sidebar from './Sidebar';
-import { UserRole } from '../data';
+import { UserRole, initials } from '../data';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useAuth } from '../context/AuthContext';
 
 interface ShellProps {
   activeNav: string;
@@ -32,6 +33,8 @@ export default function Shell({
 }: ShellProps) {
   const isAdmin = userRole === 'admin';
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const userInitials = user ? initials(user.fullName) : '';
 
   if (!isMobile) {
     return (
@@ -51,14 +54,10 @@ export default function Shell({
                 <Search size={15} className="text-[#9CA3AF] flex-shrink-0" />
                 <input className="bg-transparent outline-none text-sm text-[#374151] placeholder:text-[#9CA3AF] w-full" placeholder="Search..." />
               </div>
-              <button className="relative w-10 h-10 bg-white border border-[#E7F0EA] rounded-xl flex items-center justify-center hover:bg-[#F6FBF7] transition-colors shadow-sm">
-                <Bell size={17} color="#374151" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold text-white flex items-center justify-center" style={{ background: '#16A34A' }}>3</span>
-              </button>
               <button className="flex items-center gap-2.5 bg-white border border-[#E7F0EA] rounded-xl px-3 py-2 hover:bg-[#F6FBF7] transition-colors shadow-sm">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: 'linear-gradient(135deg,#16A34A,#10B981)' }}>DR</div>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: 'linear-gradient(135deg,#16A34A,#10B981)' }}>{userInitials}</div>
                 <div className="text-left">
-                  <p className="text-xs font-semibold text-[#14532D] leading-tight">Dr. Rachel Kim</p>
+                  <p className="text-xs font-semibold text-[#14532D] leading-tight">{user?.fullName}</p>
                   <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded" style={{ background: '#DCFCE7', color: '#15803D' }}>
                     {isAdmin ? 'Admin' : 'Staff'}
                   </span>
@@ -100,11 +99,7 @@ export default function Shell({
             </button>
             <h1 className="text-base font-semibold text-[#14532D]" style={{ fontFamily: "'Poppins', sans-serif" }}>{title}</h1>
             <div className="flex items-center gap-2">
-              <button className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm border border-[#E7F0EA] relative">
-                <Bell size={16} color="#374151" />
-                <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-[9px] font-bold text-white flex items-center justify-center" style={{ background: '#16A34A' }}>3</span>
-              </button>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg,#16A34A,#10B981)' }}>DR</div>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg,#16A34A,#10B981)' }}>{userInitials}</div>
             </div>
           </div>
 

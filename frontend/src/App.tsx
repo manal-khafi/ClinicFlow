@@ -27,8 +27,10 @@ const NAV_SCREEN: Record<string, Screen> = {
 };
 
 // Screen display info
+const TODAY_LABEL = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
 const SCREEN_META: Record<Screen, { title: string; subtitle?: string }> = {
-  dashboard:       { title: 'Dashboard', subtitle: 'Thursday, September 24, 2026' },
+  dashboard:       { title: 'Dashboard', subtitle: TODAY_LABEL },
   patients:        { title: 'Patients' },
   'patient-details': { title: 'Patient Details' },
   appointments:    { title: 'Appointments' },

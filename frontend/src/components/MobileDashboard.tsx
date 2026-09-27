@@ -35,7 +35,8 @@ export default function MobileDashboard({ onNewAppointment, onSelectAppointment,
   ];
   const [selectedDate, setSelectedDate] = useState(TODAY);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const year = 2026, month = 8;
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth();
   const calDays = getCalendarDays(year, month);
   const dateStr = (day: number) => `${year}-${padDate(month + 1)}-${padDate(day)}`;
   const isToday  = (day: number) => dateStr(day) === TODAY;

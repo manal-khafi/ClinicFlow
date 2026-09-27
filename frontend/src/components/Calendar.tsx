@@ -26,14 +26,13 @@ function getCalendarDays(year: number, month: number): (number | null)[] {
 
 function padDate(n: number) { return String(n).padStart(2, '0'); }
 
+const todayDate = new Date();
+
 export default function Calendar({ onNewAppointment, onSelectAppointment, refreshTrigger }: CalendarProps) {
-  const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(8); // 0-indexed: 8 = September
+  const [year, setYear] = useState(todayDate.getFullYear());
+  const [month, setMonth] = useState(todayDate.getMonth());
   const [view] = useState<'month' | 'week' | 'day'>('month');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-
-  const today = '2026-09-24';
-  const todayDate = new Date(today);
 
   const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const calDays = getCalendarDays(year, month);
@@ -62,7 +61,7 @@ export default function Calendar({ onNewAppointment, onSelectAppointment, refres
     if (month === 11) { setYear(y => y + 1); setMonth(0); }
     else setMonth(m => m + 1);
   }
-  function goToday() { setYear(2026); setMonth(8); }
+  function goToday() { setYear(todayDate.getFullYear()); setMonth(todayDate.getMonth()); }
 
   const isToday = (day: number) => {
     return year === todayDate.getFullYear() && month === todayDate.getMonth() && day === todayDate.getDate();

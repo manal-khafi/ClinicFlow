@@ -52,7 +52,14 @@ export interface Appointment {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-export const TODAY = '2026-09-24';
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+export const TODAY = toLocalDateStr(new Date());
 
 export function getAppointmentsForDate(date: string): Appointment[] {
   // TODO: replace with real API call

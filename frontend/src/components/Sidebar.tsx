@@ -2,7 +2,8 @@ import {
   LayoutDashboard, Users, CalendarDays, UserCog, LogOut,
   Activity, Archive
 } from 'lucide-react';
-import { UserRole } from '../data';
+import { UserRole, initials } from '../data';
+import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
   activeNav: string;
@@ -20,6 +21,8 @@ const navItems = [
 
 export default function Sidebar({ activeNav, onNav, userRole = 'admin' }: SidebarProps) {
   const isAdmin = userRole === 'admin';
+  const { user } = useAuth();
+  const userInitials = user ? initials(user.fullName) : '';
   return (
     <aside
       style={{ width: 240, minWidth: 240, background: '#fff', borderRight: '1px solid #E7F0EA' }}
@@ -84,15 +87,15 @@ export default function Sidebar({ activeNav, onNav, userRole = 'admin' }: Sideba
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, #16A34A, #10B981)' }}
           >
-            DR
+            {userInitials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-[#14532D] truncate leading-tight">Dr. Rachel Kim</p>
+            <p className="text-sm font-semibold text-[#14532D] truncate leading-tight">{user?.fullName}</p>
             <span
               className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
               style={{ background: '#DCFCE7', color: '#15803D' }}
             >
-              Admin
+              {isAdmin ? 'Admin' : 'Staff'}
             </span>
           </div>
         </div>
