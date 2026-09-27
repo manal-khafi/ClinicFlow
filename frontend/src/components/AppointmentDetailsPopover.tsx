@@ -1,4 +1,4 @@
-import { X, User, Clock, FileText, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
+import { X, User, Clock, FileText, CheckCircle2, XCircle, ExternalLink, AlertCircle, Loader2 } from 'lucide-react';
 import { Appointment, statusColor, statusLabel } from '../data';
 
 interface AppointmentDetailsPopoverProps {
@@ -6,9 +6,11 @@ interface AppointmentDetailsPopoverProps {
   onClose: () => void;
   onConfirm: (id: string) => void;
   onCancel: (id: string) => void;
+  isSubmitting?: boolean;
+  error?: string;
 }
 
-export default function AppointmentDetailsPopover({ appointment, onClose, onConfirm, onCancel }: AppointmentDetailsPopoverProps) {
+export default function AppointmentDetailsPopover({ appointment, onClose, onConfirm, onCancel, isSubmitting, error }: AppointmentDetailsPopoverProps) {
   const colors = statusColor(appointment.status);
 
   return (
@@ -87,30 +89,41 @@ export default function AppointmentDetailsPopover({ appointment, onClose, onConf
           )}
         </div>
 
+        {/* Error banner */}
+        {error && (
+          <div className="flex items-start gap-2 p-2.5 rounded-xl border mb-3" style={{ background: '#FEF2F2', borderColor: '#FCA5A5' }}>
+            <AlertCircle size={14} className="flex-shrink-0 mt-0.5" color="#DC2626" />
+            <p className="text-xs font-medium" style={{ color: '#DC2626' }}>{error}</p>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex gap-2">
           {appointment.status === 'pending' && (
             <button
-              onClick={() => { onConfirm(appointment.id); onClose(); }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 active:scale-95"
+              onClick={() => onConfirm(appointment.id)}
+              disabled={isSubmitting}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-60 disabled:pointer-events-none"
               style={{ background: '#16A34A', color: '#fff' }}
             >
-              <CheckCircle2 size={13} />
+              {isSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
               Confirm
             </button>
           )}
           {appointment.status !== 'cancelled' && (
             <button
-              onClick={() => { onCancel(appointment.id); onClose(); }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border transition-all hover:bg-red-50 active:scale-95"
+              onClick={() => onCancel(appointment.id)}
+              disabled={isSubmitting}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border transition-all hover:bg-red-50 active:scale-95 disabled:opacity-60 disabled:pointer-events-none"
               style={{ borderColor: '#FCA5A5', color: '#DC2626' }}
             >
-              <XCircle size={13} />
+              {isSubmitting ? <Loader2 size={13} className="animate-spin" /> : <XCircle size={13} />}
               Cancel
             </button>
           )}
           <button
-            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border border-[#E7F0EA] text-[#6B7280] transition-all hover:bg-[#F6FBF7] active:scale-95"
+            disabled={isSubmitting}
+            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border border-[#E7F0EA] text-[#6B7280] transition-all hover:bg-[#F6FBF7] active:scale-95 disabled:opacity-60"
           >
             <ExternalLink size={13} />
           </button>

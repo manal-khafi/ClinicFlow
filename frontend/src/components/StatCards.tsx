@@ -1,41 +1,48 @@
 import { Users, CalendarCheck, Clock, CheckCircle2 } from 'lucide-react';
+import { Skeleton } from './ui/Skeleton';
+import { DashboardStats } from '../api/dashboard.api';
 
-const STATS = [
-  {
-    label: 'Total Patients',
-    value: '0', // TODO: replace with real API call to /api/dashboard/stats
-    change: '+12 this month',
-    icon: Users,
-    iconBg: '#DCFCE7',
-    iconColor: '#16A34A',
-  },
-  {
-    label: "Today's Appointments",
-    value: '0', // TODO: replace with real API call to /api/dashboard/stats
-    change: '3 remaining',
-    icon: CalendarCheck,
-    iconBg: '#DBEAFE',
-    iconColor: '#2563EB',
-  },
-  {
-    label: 'Pending',
-    value: '0', // TODO: replace with real API call to /api/dashboard/stats
-    change: 'Needs confirmation',
-    icon: Clock,
-    iconBg: '#FEF3C7',
-    iconColor: '#D97706',
-  },
-  {
-    label: 'Confirmed',
-    value: '0', // TODO: replace with real API call to /api/dashboard/stats
-    change: 'For today',
-    icon: CheckCircle2,
-    iconBg: '#DCFCE7',
-    iconColor: '#16A34A',
-  },
-];
+interface StatCardsProps {
+  stats: DashboardStats | null;
+  loading?: boolean;
+}
 
-export default function StatCards() {
+export default function StatCards({ stats, loading }: StatCardsProps) {
+  const STATS = [
+    {
+      label: 'Total Patients',
+      value: stats?.totalPatients,
+      change: '+12 this month',
+      icon: Users,
+      iconBg: '#DCFCE7',
+      iconColor: '#16A34A',
+    },
+    {
+      label: "Today's Appointments",
+      value: stats?.todaysAppointments,
+      change: '3 remaining',
+      icon: CalendarCheck,
+      iconBg: '#DBEAFE',
+      iconColor: '#2563EB',
+    },
+    {
+      label: 'Pending',
+      value: stats?.pending,
+      change: 'Needs confirmation',
+      icon: Clock,
+      iconBg: '#FEF3C7',
+      iconColor: '#D97706',
+    },
+    {
+      label: 'Confirmed',
+      value: stats?.confirmed,
+      change: 'For today',
+      icon: CheckCircle2,
+      iconBg: '#DCFCE7',
+      iconColor: '#16A34A',
+    },
+  ];
+
   return (
     <div className="grid grid-cols-4 gap-4">
       {STATS.map(({ label, value, change, icon: Icon, iconBg, iconColor }) => (
@@ -52,9 +59,13 @@ export default function StatCards() {
             </div>
           </div>
           <div>
-            <p className="text-3xl font-bold text-[#14532D] leading-none mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              {value}
-            </p>
+            {loading || value === undefined ? (
+              <Skeleton className="mb-1" style={{ width: 48, height: 30 }} />
+            ) : (
+              <p className="text-3xl font-bold text-[#14532D] leading-none mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                {value}
+              </p>
+            )}
             <p className="text-sm font-medium text-[#6B7280]">{label}</p>
           </div>
           <p className="text-xs text-[#10B981] font-medium">{change}</p>

@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Appointment, statusColor, statusLabel, TODAY } from '../data';
 import { getAppointments } from '../api/appointments.api';
+import { DashboardStats } from '../api/dashboard.api';
+import { Skeleton } from './ui/Skeleton';
 
 interface MobileDashboardProps {
   onNewAppointment: (date?: string) => void;
   onSelectAppointment: (a: Appointment) => void;
   refreshTrigger?: number;
+  stats: DashboardStats | null;
+  statsLoading?: boolean;
 }
 
 const DAYS_OF_WEEK_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -22,14 +26,13 @@ function getCalendarDays(year: number, month: number): (number | null)[] {
 
 function padDate(n: number) { return String(n).padStart(2, '0'); }
 
-const STATS = [
-  { label: 'Total Patients', value: '0', color: '#16A34A', bg: '#ECFDF5' }, // TODO: replace with real API call to /api/dashboard/stats
-  { label: "Today's Appts",  value: '0', color: '#2563EB', bg: '#DBEAFE' }, // TODO: replace with real API call to /api/dashboard/stats
-  { label: 'Pending',        value: '0', color: '#D97706', bg: '#FEF3C7' }, // TODO: replace with real API call to /api/dashboard/stats
-  { label: 'Confirmed',      value: '0', color: '#16A34A', bg: '#DCFCE7' }, // TODO: replace with real API call to /api/dashboard/stats
-];
-
-export default function MobileDashboard({ onNewAppointment, onSelectAppointment, refreshTrigger }: MobileDashboardProps) {
+export default function MobileDashboard({ onNewAppointment, onSelectAppointment, refreshTrigger, stats, statsLoading }: MobileDashboardProps) {
+  const STATS = [
+    { label: 'Total Patients', value: stats?.totalPatients, color: '#16A34A', bg: '#ECFDF5' },
+    { label: "Today's Appts",  value: stats?.todaysAppointments, color: '#2563EB', bg: '#DBEAFE' },
+    { label: 'Pending',        value: stats?.pending, color: '#D97706', bg: '#FEF3C7' },
+    { label: 'Confirmed',      value: stats?.confirmed, color: '#16A34A', bg: '#DCFCE7' },
+  ];
   const [selectedDate, setSelectedDate] = useState(TODAY);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const year = 2026, month = 8;
@@ -74,7 +77,11 @@ export default function MobileDashboard({ onNewAppointment, onSelectAppointment,
             <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-2.5" style={{ background: bg }}>
               <span className="text-sm font-bold" style={{ color }}>+</span>
             </div>
-            <p className="text-2xl font-bold leading-none mb-1" style={{ color, fontFamily: "'Poppins', sans-serif" }}>{value}</p>
+            {statsLoading || value === undefined ? (
+              <Skeleton className="mb-1" style={{ width: 36, height: 24 }} />
+            ) : (
+              <p className="text-2xl font-bold leading-none mb-1" style={{ color, fontFamily: "'Poppins', sans-serif" }}>{value}</p>
+            )}
             <p className="text-[11px] text-[#6B7280] font-medium">{label}</p>
           </div>
         ))}
