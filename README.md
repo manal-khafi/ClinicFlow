@@ -123,7 +123,7 @@ Requires Docker and Docker Compose. From the repo root:
 docker compose up --build
 ```
 
-This starts three services: `postgres` (5432), `backend` (4000), and `frontend` (5173, served by nginx). Migrations run automatically on backend startup. The first time only, seed the database:
+This starts three services: `postgres` (5434), `backend` (4000), and `frontend` (5173, served by nginx). Migrations run automatically on backend startup. The first time only, seed the database:
 
 ```bash
 docker compose exec backend npx prisma db seed
