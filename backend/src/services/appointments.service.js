@@ -5,7 +5,7 @@ const CONFLICT_WINDOW_MS = 30 * 60 * 1000;
 
 const APPOINTMENT_INCLUDE = {
   patient: { select: { fullName: true, cin: true, deletedAt: true } },
-  createdBy: { select: { fullName: true } },
+  createdBy: { select: { fullName: true, isActive: true } },
 };
 
 // Throws 409 if this patient already has a CONFIRMED appointment within 30 minutes
@@ -138,7 +138,7 @@ async function getAppointmentsForPatient(patientId) {
   return prisma.appointment.findMany({
     where: { patientId },
     orderBy: { appointmentDate: 'desc' },
-    include: { createdBy: { select: { fullName: true } } },
+    include: { createdBy: { select: { fullName: true, isActive: true } } },
   });
 }
 
