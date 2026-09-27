@@ -10,7 +10,6 @@ async function main() {
   console.log('Seeding database...');
 
   // Clean existing data (order matters because of foreign keys)
-  await prisma.auditLog.deleteMany();
   await prisma.appointment.deleteMany();
   await prisma.patient.deleteMany();
   await prisma.user.deleteMany();

@@ -40,7 +40,6 @@ model User {
 
   // Relations
   appointments Appointment[] @relation("CreatedByUser")
-  auditLogs    AuditLog[]
 
   @@map("users")
 }
@@ -82,21 +81,4 @@ model Appointment {
   @@index([patientId, appointmentDate])
   @@index([appointmentDate, status])
   @@map("appointments")
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  action    String   // CREATE, UPDATE, DELETE, STATUS_CHANGE
-  entity    String   // patients, appointments, users
-  entityId  String   @map("entity_id")
-  metadata  Json?
-  createdAt DateTime @default(now()) @map("created_at")
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
-
-  @@index([entity, entityId])
-  @@index([userId])
-  @@map("audit_logs")
 }
