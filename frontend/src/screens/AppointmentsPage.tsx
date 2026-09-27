@@ -8,7 +8,7 @@ import {
   statusColor, statusLabel, formatDate, initials, avatarGradient
 } from '../data';
 import { getAppointments, updateAppointmentStatus } from '../api/appointments.api';
-import { StatusBadge } from '../components/ui/Badge';
+import { StatusBadge, InactiveUserBadge } from '../components/ui/Badge';
 import Pagination from '../components/ui/Pagination';
 import EmptyState from '../components/ui/EmptyState';
 import { TableSkeleton, CardSkeleton } from '../components/ui/Skeleton';
@@ -236,7 +236,10 @@ export default function AppointmentsPage({ userRole, onGoToDashboard }: Appointm
               </div>
 
               {/* Created by */}
-              <span className="text-sm text-[#9CA3AF] truncate">{a.createdBy}</span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-sm text-[#9CA3AF] truncate">{a.createdBy}</span>
+                {a.createdByActive === false && <InactiveUserBadge />}
+              </div>
 
               {/* Actions */}
               <div className="relative flex items-center justify-end">

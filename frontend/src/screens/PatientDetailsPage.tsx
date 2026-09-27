@@ -7,7 +7,7 @@ import {
   Patient, Appointment, calcAge, formatDate, initials, avatarGradient,
   statusColor, UserRole, TODAY
 } from '../data';
-import { StatusBadge } from '../components/ui/Badge';
+import { StatusBadge, InactiveUserBadge } from '../components/ui/Badge';
 import { useToast } from '../context/ToastContext';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -209,7 +209,10 @@ export default function PatientDetailsPage({ patientId, userRole, onBack, onNewA
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#14532D] truncate">{a.reason}</p>
-                  <p className="text-xs text-[#9CA3AF]">{a.timeStart}–{a.timeEnd} · by {a.createdBy}</p>
+                  <p className="text-xs text-[#9CA3AF] flex items-center gap-1.5 flex-wrap">
+                    <span>{a.timeStart}–{a.timeEnd} · by {a.createdBy}</span>
+                    {a.createdByActive === false && <InactiveUserBadge />}
+                  </p>
                 </div>
                 <StatusBadge status={a.status} size="sm" />
               </div>

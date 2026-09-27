@@ -1,5 +1,6 @@
 import { X, User, Clock, FileText, CheckCircle2, XCircle, ExternalLink, AlertCircle, Loader2 } from 'lucide-react';
 import { Appointment, statusColor, statusLabel } from '../data';
+import { InactiveUserBadge } from './ui/Badge';
 
 interface AppointmentDetailsPopoverProps {
   appointment: Appointment;
@@ -87,6 +88,18 @@ export default function AppointmentDetailsPopover({ appointment, onClose, onConf
               </div>
             </div>
           )}
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#ECFDF5' }}>
+              <User size={13} color="#16A34A" />
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <div>
+                <p className="text-[11px] text-[#9CA3AF] font-medium">Created by</p>
+                <p className="text-sm font-medium text-[#1F2937]">{appointment.createdBy}</p>
+              </div>
+              {appointment.createdByActive === false && <InactiveUserBadge />}
+            </div>
+          </div>
         </div>
 
         {/* Error banner */}

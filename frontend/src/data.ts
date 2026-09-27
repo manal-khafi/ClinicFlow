@@ -25,6 +25,7 @@ export interface User {
   email: string;
   role: UserRole;
   createdAt: string;
+  isActive: boolean;
 }
 
 // TODO: replace with real API call
@@ -44,6 +45,7 @@ export interface Appointment {
   notes?: string;
   status: AppointmentStatus;
   createdBy: string;
+  createdByActive?: boolean;
 }
 
 // TODO: replace with real API call

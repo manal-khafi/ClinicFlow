@@ -14,7 +14,7 @@ interface ApiAppointment {
   createdAt: string;
   updatedAt: string;
   patient?: { fullName: string; cin: string; deletedAt: string | null };
-  createdBy?: { fullName: string };
+  createdBy?: { fullName: string; isActive: boolean };
 }
 
 interface PaginatedAppointments {
@@ -59,6 +59,7 @@ function mapApiAppointment(a: ApiAppointment): Appointment {
     notes: a.notes ?? undefined,
     status: a.status,
     createdBy: a.createdBy?.fullName ?? '',
+    createdByActive: a.createdBy?.isActive ?? true,
   };
 }
 

@@ -34,6 +34,33 @@ export function InactivePatientBadge() {
   );
 }
 
+export function InactiveUserBadge() {
+  return (
+    <span
+      className="inline-flex items-center font-semibold rounded-full flex-shrink-0"
+      style={{ background: '#F3F4F6', color: '#6B7280', fontSize: 10, padding: '2px 8px' }}
+    >
+      Inactive
+    </span>
+  );
+}
+
+interface ActiveStatusBadgeProps { isActive: boolean }
+
+export function ActiveStatusBadge({ isActive }: ActiveStatusBadgeProps) {
+  return (
+    <span
+      className="inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full"
+      style={{
+        background: isActive ? '#DCFCE7' : '#F3F4F6',
+        color: isActive ? '#16A34A' : '#6B7280',
+      }}
+    >
+      {isActive ? 'Active' : 'Inactive'}
+    </span>
+  );
+}
+
 interface RoleBadgeProps { role: UserRole }
 
 export function RoleBadge({ role }: RoleBadgeProps) {
