@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  Plus, Search, Eye, Pencil, Trash2, ChevronDown,
+  Plus, Search, Eye, Pencil, Archive, ChevronDown,
   SortAsc, AlertCircle, X
 } from 'lucide-react';
 import { Patient, UserRole, calcAge, formatDate, initials, avatarGradient } from '../data';
@@ -195,10 +195,10 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
     if (!deleteTarget) return;
     try {
       await deletePatient(deleteTarget.id);
-      addToast('success', `${deleteTarget.name} removed from patient records.`);
+      addToast('success', `${deleteTarget.name} archived successfully.`);
       fetchPatients();
     } catch {
-      addToast('error', 'Failed to delete patient.');
+      addToast('error', 'Failed to archive patient.');
     } finally {
       setDeleteTarget(null);
     }
@@ -313,8 +313,8 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
                   <Pencil size={14} />
                 </button>
                 {isAdmin && (
-                  <button onClick={() => setDeleteTarget(p)} className="w-7 h-7 rounded-lg flex items-center justify-center text-[#9CA3AF] hover:bg-[#FEF2F2] hover:text-[#DC2626] transition-colors" title="Delete">
-                    <Trash2 size={14} />
+                  <button onClick={() => setDeleteTarget(p)} className="w-7 h-7 rounded-lg flex items-center justify-center text-[#9CA3AF] hover:bg-[#FEF2F2] hover:text-[#DC2626] transition-colors" title="Archive">
+                    <Archive size={14} />
                   </button>
                 )}
               </div>
@@ -372,7 +372,7 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
               </button>
               {isAdmin && (
                 <button onClick={() => setDeleteTarget(p)} className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-red-100 text-[#DC2626] hover:bg-[#FEF2F2] transition-colors flex items-center justify-center gap-1">
-                  <Trash2 size={12} /> Delete
+                  <Archive size={12} /> Archive
                 </button>
               )}
             </div>
@@ -403,12 +403,12 @@ export default function PatientsListPage({ userRole, onViewPatient }: PatientsLi
         </BottomSheet>
       )}
 
-      {/* Delete confirm */}
+      {/* Archive confirm */}
       {deleteTarget && (
         <ConfirmDialog
-          title={`Delete ${deleteTarget.name}?`}
-          message="This patient and all their appointment records will be permanently removed. This action cannot be undone."
-          confirmLabel="Yes, delete"
+          title={`Archive ${deleteTarget.name}?`}
+          message="Are you sure you want to archive this patient? Their future appointments will be cancelled, and they can be restored later from Archived Patients."
+          confirmLabel="Yes, archive"
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
           danger

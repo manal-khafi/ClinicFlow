@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  ArrowLeft, Pencil, Trash2, Plus, Phone, MapPin, Calendar, Clock,
+  ArrowLeft, Pencil, Archive, Plus, Phone, MapPin, Calendar, Clock,
   ChevronRight, User, Loader2
 } from 'lucide-react';
 import {
@@ -11,7 +11,7 @@ import { StatusBadge } from '../components/ui/Badge';
 import { useToast } from '../context/ToastContext';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { getPatientById } from '../api/patients.api';
+import { getPatientById, deletePatient } from '../api/patients.api';
 import { getAppointmentsForPatient } from '../api/appointments.api';
 
 interface PatientDetailsPageProps {
@@ -59,6 +59,19 @@ export default function PatientDetailsPage({ patientId, userRole, onBack, onNewA
       .catch(() => { if (!cancelled) addToast('error', 'Failed to load appointments.'); });
     return () => { cancelled = true; };
   }, [patientId, addToast]);
+
+  async function handleDelete() {
+    if (!patient) return;
+    try {
+      await deletePatient(patient.id);
+      addToast('success', `${patient.name} archived successfully.`);
+      onBack();
+    } catch {
+      addToast('error', 'Failed to archive patient.');
+    } finally {
+      setShowDeleteConfirm(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -113,7 +126,7 @@ export default function PatientDetailsPage({ patientId, userRole, onBack, onNewA
             </button>
             {isAdmin && (
               <button onClick={() => setShowDeleteConfirm(true)} className="w-8 h-8 rounded-xl flex items-center justify-center border border-[#E7F0EA] text-[#9CA3AF] hover:bg-[#FEF2F2] hover:text-[#DC2626] transition-colors">
-                <Trash2 size={13} />
+                <Archive size={13} />
               </button>
             )}
           </div>
@@ -225,7 +238,7 @@ export default function PatientDetailsPage({ patientId, userRole, onBack, onNewA
         <InfoCard />
         <AppointmentsSection />
         {showDeleteConfirm && (
-          <ConfirmDialog title={`Delete ${patient.name}?`} message="All appointment records will be permanently removed." confirmLabel="Delete" onConfirm={() => { addToast('success', 'Patient deleted.'); onBack(); }} onCancel={() => setShowDeleteConfirm(false)} danger />
+          <ConfirmDialog title={`Archive ${patient.name}?`} message="Are you sure you want to archive this patient? Their future appointments will be cancelled, and they can be restored later from Archived Patients." confirmLabel="Yes, archive" onConfirm={handleDelete} onCancel={() => setShowDeleteConfirm(false)} danger />
         )}
       </div>
     );
@@ -246,7 +259,7 @@ export default function PatientDetailsPage({ patientId, userRole, onBack, onNewA
       </div>
 
       {showDeleteConfirm && (
-        <ConfirmDialog title={`Delete ${patient.name}?`} message="All appointment records for this patient will be permanently removed. This action cannot be undone." confirmLabel="Yes, delete patient" onConfirm={() => { addToast('success', `${patient.name} has been deleted.`); onBack(); }} onCancel={() => setShowDeleteConfirm(false)} danger />
+        <ConfirmDialog title={`Archive ${patient.name}?`} message="Are you sure you want to archive this patient? Their future appointments will be cancelled, and they can be restored later from Archived Patients." confirmLabel="Yes, archive patient" onConfirm={handleDelete} onCancel={() => setShowDeleteConfirm(false)} danger />
       )}
     </div>
   );
